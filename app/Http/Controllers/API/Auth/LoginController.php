@@ -18,18 +18,32 @@ class LoginController extends Controller
      */
     public function login(AuthRequest $request): JsonResponse
     {
-        if (auth()->attempt($request->all())) {
+        if (auth()->attempt($request->only('email', 'password'))) {
             $user = auth()->user();
-
+    
+            // Hapus token lama
             $user->tokens()->delete();
-
-            $success = $user->createToken('MyApp')->plainTextToken;
-
-            return $this->success(['token' => $success], AuthConstants::LOGIN);
+    
+            // Buat token baru
+            $token = $user->createToken('MyApp')->plainTextToken;
+    
+            // Kirim response dengan user data dan token
+            return $this->success([
+                'token' => $token,
+                'user'  => [
+                    'id'         => $user->id,
+                    'name'       => $user->name,
+                    'email'      => $user->email,
+                    'role'       => $user->role,
+                    'created_at' => $user->created_at,
+                    'updated_at' => $user->updated_at,
+                ]
+            ], AuthConstants::LOGIN);
         }
-
+    
         return $this->error([], AuthConstants::VALIDATION);
     }
+    
 
     /**
      * @return JsonResponse
